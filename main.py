@@ -30,13 +30,18 @@ def lastfm_get(load):
     return requests.get(url, headers=head, params=load)
 
 def json_process(json):
-    albums = json;
+    albums = json
     for i in range(state.total_albums):
         album = Album
         album.album_name = json['topalbums']['album'][i]['name']
         album.artist_name = json['topalbums']['album'][i]['artist']['name']
         album.album_art = json['topalbums']['album'][i]['image'][3]['#text']
         all_albums.append(album)
+    #then add restructuring
+
+# change to getting first result, return artist, albumart, song, and nowplaying
+def process_current(json):
+    recent_listening = json
 
 
 # form is [username]?range=[time_range]&albums=[total_albums]
@@ -65,6 +70,19 @@ def read_item(username: str, range: Union[str, None] = None, albums: Union[str, 
     })
     if r.status_code == 200:
         json_process(r.json())
+    else:
+        return None
+    
+@app.get("/get_playing/{username}")
+def get_playing(username: str):
+    state.username = username
+    recent = lastfm_get({
+        'method': 'user.getRecentTracks',
+        'user': state.username
+    })
+    if recent.status_code == 200:
+        # do something
+        process_current(recent.json())
     else:
         return None
 
