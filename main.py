@@ -16,11 +16,11 @@ app = FastAPI()
 all_albums = []
 processed = {}
 
-class Album(BaseModel):
-    album_name: str
-    artist_name: str
-    elo: ClassVar[int] = 1400
-    album_art: str
+# class Album(BaseModel):
+#     album_name: str
+#     artist_name: str
+#     #elo: ClassVar[int] = 1400
+#     album_art: str
 
 class Song(BaseModel):
     song_name: str
@@ -45,17 +45,12 @@ def lastfm_get(load):
     return requests.get(url, headers=head, params=load)
 
 def json_process(json):
-    for i in range(state.total_albums):
-        album = Album
-        album.album_name = json['topalbums']['album'][i]['name']
-        album.artist_name = json['topalbums']['album'][i]['artist']['name']
-        album.album_art = json['topalbums']['album'][i]['image'][3]['#text']
+    for i in range(int(state.total_albums)):
+        album = {}
+        album['album_name'] = json['topalbums']['album'][i]['name']
+        album['artist_name'] = json['topalbums']['album'][i]['artist']['name']
+        album['album_art'] = json['topalbums']['album'][i]['image'][3]['#text']
         all_albums.append(album)
-    counter = 0
-    for album in all_albums:
-        json_data = jsonable_encoder(album)
-        processed[counter] = json_data
-        counter = counter + 1
 
 # change to getting first result, return artist, albumart, song, and nowplaying
 def process_current(json):
@@ -70,9 +65,8 @@ def process_current(json):
         current.status = True
     else:
         current.status = False
-    return jsonable_encoder(current)
-    
-
+    deconstruct = jsonable_encoder(current)
+    return deconstruct
 
 # form is [username]?range=[time_range]&albums=[total_albums]
 state = User
@@ -89,7 +83,7 @@ def read_item(username: str, range: Union[str, None] = None, albums: Union[str, 
     else:
         state.time_range = range
     if albums is None:
-        state.total_albums = "100"
+        state.total_albums = "50"
     else:
         state.total_albums = albums
     r = lastfm_get({
@@ -100,7 +94,7 @@ def read_item(username: str, range: Union[str, None] = None, albums: Union[str, 
     })
     if r.status_code == 200:
         json_process(r.json())
-        return processed
+        return all_albums
     else:
         return None
     
@@ -112,8 +106,8 @@ def get_playing(username: str):
         'user': state.username
     })
     if recent.status_code == 200:
-        #return recent.json()
-        return process_current(recent.json())
+        #return recent.json() this one works
+        return process_current(recent.json()) #this one doesnt
     else:
         return None
 
